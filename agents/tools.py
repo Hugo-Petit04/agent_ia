@@ -30,57 +30,41 @@ def load_bookings() -> list[dict]:
     """Retourne toutes les réservations existantes."""
     return _load_json(TABLE_BOOKINGS_FILE)
 
-def get_available_places(booking_date: str) -> dict:
+def available_places(booking_date: str) -> bool:
     """
-    Retourne le nombre de places disponibles pour une date donnée (format DD-MM-YYYY).
-    La capacité maximale est de 50 places.
+    Retourne True si des places sont disponibles pour une date donnée, False sinon.
     """
-    
+
     bookings = _load_json(TABLE_BOOKINGS_FILE)
+
     reserved = sum(
-        b["people_number"] for b in bookings if b["date"] == booking_date
+        int(b["people_number"])
+        for b in bookings
+        if b["date"] == booking_date
     )
+
     available = MAX_CAPACITY - reserved
-    return {
-        "date": booking_date,
-        "capacity": MAX_CAPACITY,
-        "reserved": reserved,
-        "available": available,
-        "created_at": get_current_datetime(),
-    }
+
+    return available > 0
 
 def add_booking(name: str, people_number: int, booking_date: str) -> dict:
     """
     Ajoute une réservation de table.
-
-    Args :
-        name (str): Nom du client.
-        people_number (int): Nombre de personnes pour la réservation.
-        booking_date (str): Date de la réservation au format DD-MM-YYYY.
-    
-    Returns :
-        dict: Détails de la réservation si réussie, sinon un message d'erreur.
     """
-    
-    availability = get_available_places(booking_date)
-    if people_number > availability["available"]:
-        return {
-            "error": (
-                f"Pas assez de places pour le {booking_date}. "
-                f"Demandé : {people_number}, disponible : {availability['available']}"
-            )
-        }
+
 
     bookings = _load_json(TABLE_BOOKINGS_FILE)
+
     booking = {
         "id": _next_id(bookings),
         "name": name,
         "people_number": people_number,
         "date": booking_date,
     }
+
     bookings.append(booking)
     _save_json(TABLE_BOOKINGS_FILE, bookings)
-    return {**booking, "places_restantes": availability["available"] - people_number}
+
 
 def delete_booking(booking_id: int) -> dict:
     """

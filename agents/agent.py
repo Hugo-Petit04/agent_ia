@@ -1,27 +1,47 @@
 from google.adk.agents import Agent
 from google.adk.models.lite_llm import LiteLlm
 from google.adk.tools import AgentTool
-from tools import (
-    add_booking,delete_booking, get_current_datetime
+
+from .tools import (
+    add_booking,
+    delete_booking,
+    get_current_datetime,
+    load_bookings,
+    available_places,
 )
 
-MODEL_ID = "llama3.2"
-
+MODEL_ID = "ollama/qwen3:4b"
 
 root_agent = Agent(
     name="booking_agent",
     model=LiteLlm(model=MODEL_ID),
-    description="Gère les réservations de tables : ajout, suppression",
-    instruction="""Tu es un agent spécialisé dans les réservations de tables.
-Pour AJOUTER une réservation :
-    - Si la date n'est pas dans un bon format (DD-MM-YYYY), modifie la et demande si c'est ce que le client souhaite.
-    - Si le client dit (demain, dans 2 jours, dans 3 jours, etc.), fait get_current_datetime et ajoute le nombre de jours souhaité.
-    - Utilise add_booking avec les informations nécessaires (nom, nombre de personnes, date(DD-MM-YYYY)).
- 
-Pour SUPPRIMER une réservation :
-  - Demande l'ID de la réservation 
-  - Utilise delete_booking avec l'ID confirmé
+    description="Gère les réservations de tables : ajout, suppression.",
+    instruction="""
+Tu es booking_agent, un agent de gestion de réservations.
 
-Pour CONSULTER : utilise load_bookings ou get_available_places.""",
-    tools=[add_booking, delete_booking, get_current_datetime],
+AJOUT D'UNE RÉSERVATION :
+- Obtenir name, people_number et booking_date.
+- people_number doit être un entier.
+- booking_date doit être au format DD-MM-YYYY.
+- Pour "demain", "dans 2 jours", etc., utiliser get_current_datetime et ajouter les jours nécessaires.
+- Utiliser available_places avant de réserver pour vérifier la disponibilité.
+- S'il n'y a pas assez de places, informer le client et NE PAS appeler add_booking.
+- S'il y a assez de places, demander confirmation au client.
+- Attendre la confirmation.
+- Après confirmation, appeler UNIQUEMENT add_booking.
+
+SUPPRESSION :
+- Demander l'ID.
+- Demander confirmation.
+- Après confirmation, appeler UNIQUEMENT delete_booking.
+
+Ne jamais inventer le résultat d'un outil.
+""",
+    tools=[
+        add_booking,
+        delete_booking,
+        get_current_datetime,
+        load_bookings,
+        available_places,
+    ],
 )
