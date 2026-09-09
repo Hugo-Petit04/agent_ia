@@ -88,7 +88,9 @@ def validate_booking_variables(name: str, people_number: int, booking_date: str)
     
     if not isinstance(people_number, int) or people_number <= 0:
         return False, "Le nombre de personnes doit être un entier positif."
-    
+
+    if (booking_date < get_current_datetime()):
+        return False, "La date de réservation ne peut pas être dans le passé."
     try:
         datetime.strptime(booking_date, "%d-%m-%Y")
     except ValueError:
